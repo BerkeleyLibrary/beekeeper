@@ -5,6 +5,9 @@ module Beekeeper
   class Docker
     def events(&block)
       Excon.get('unix:///events',
+        query: {
+          format: '{{json .}}',
+        },
         socket: '/var/run/docker.sock',
         read_timeout: nil,
         connect_timeout: nil,

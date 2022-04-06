@@ -18,6 +18,10 @@ module Beekeeper
       attributes['exitCode']
     end
 
+    def from
+      @data['from']
+    end
+
     def service_name
       attributes['com.docker.swarm.service.name']
     end
@@ -30,16 +34,24 @@ module Beekeeper
       Time.at(@data['time'])
     end
 
-    def died?
-      @data['Action'] == 'die'
-    end
-
     def container?
       @data['Type'] == 'container'
     end
 
+    def died?
+      @data['Action'] == 'die'
+    end
+
     def failed?
       container? and died? and exit_code != '0'
+    end
+
+    def service_failure?
+      swarm_service? and failed?
+    end
+
+    def swarm_service?
+      attributes.key? 'com.docker.swarm.service.id'
     end
   end
 end

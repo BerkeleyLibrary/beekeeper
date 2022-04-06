@@ -11,11 +11,14 @@ module Beekeeper
     end
 
     def handle(event, docker)
-      if event.failed?
+      if event.service_failure?
+        puts "Notifying event: #{event.inspect}"
+
         logs = docker.container_logs(event.actor_id)
 
-        res = @connection.post(body: JSON.dump(
-          {
+        @connection.post(
+          expects: [200, 201],
+          body: JSON.dump({
             blocks: [
               {
                 type: 'header',
@@ -43,6 +46,10 @@ module Beekeeper
                     type: 'mrkdwn',
                     text: "*Exit Code:*\n#{event.exit_code}",
                   },
+                  {
+                    type: 'mrkdwn',
+                    text: "*Image:*\n#{simplify_image_name(event.from)}",
+                  },
                 ],
               },
               {
@@ -56,13 +63,21 @@ module Beekeeper
                 type: 'section',
                 text: {
                   type: 'plain_text',
-                  text: logs,
+                  text: logs || '<logs not available>',
                 },
               },
             ],
-          },
-        ))
+          }),
+        )
       end
+    end
+
+    private
+
+    def simplify_image_name(image_name)
+      image_name
+        .gsub('containers\.lib\.berkeley\.edu', '...') \
+        .split('@')[0]
     end
   end
 end

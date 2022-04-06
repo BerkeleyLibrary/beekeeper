@@ -13,6 +13,7 @@ In a nutshell:
 docker service create \
     --name fail-test \
     --replicas=0 \
+    --restart-condition=none \
     alpine /bin/sh -c 'echo "fake log data" && false'
 
 # Build and start the app

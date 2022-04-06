@@ -32,4 +32,4 @@ COPY . .
 ENV PATH="/opt/app/bin:$PATH"
 
 ENTRYPOINT ["rake"]
-CMD ["watch"]
+CMD ["-T"]

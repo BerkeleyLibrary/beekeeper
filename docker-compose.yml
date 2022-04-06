@@ -3,6 +3,7 @@ version: "3.5"
 services:
   app:
     build: .
+    command: watch
     secrets:
       - SLACK_WEBHOOK_URL
     volumes:

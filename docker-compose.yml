@@ -1,0 +1,14 @@
+version: "3.5"
+
+services:
+  app:
+    build: .
+    secrets:
+      - SLACK_WEBHOOK_URL
+    volumes:
+      - ./:/opt/app
+      - /var/run/docker.sock:/var/run/docker.sock
+
+secrets:
+  SLACK_WEBHOOK_URL:
+    file: ./secrets/SLACK_WEBHOOK_URL

@@ -1,29 +1,17 @@
-require 'excon'
-require 'json'
+require_relative 'docker.rb'
+require_relative 'logging.rb'
+require_relative 'slack.rb'
 
 module Beekeeper
   class SlackHandler
     include Beekeeper::Logging
 
-    def initialize(docker: nil, connection: nil)
-      if connection.nil?
-        webhook_url_file = ENV.fetch('SLACK_WEBHOOK_URL_FILE', '/run/secrets/SLACK_WEBHOOK_URL')
-        webhook_url = File.read(webhook_url_file)
-        connection = Excon.new(webhook_url)
-      end
-
-      connection.data[:headers].merge!({
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      })
-
-      @connection = connection
-
-      if docker.nil?
-        docker = Beekeeper::Docker.new
-      end
-
+    def initialize(docker: nil, slack: nil)
+      docker ||= Beekeeper::Docker.new
       @docker = docker
+
+      slack ||= Beekeeper::Slack.new
+      @slack = slack
     end
 
     def handle(event)
@@ -33,59 +21,56 @@ module Beekeeper
 
       logs = @docker.container_logs(event.actor_id, truncate: 5000)
 
-      @connection.post(
-        expects: [200, 201],
-        body: JSON.dump({
-          blocks: [
-            {
-              type: 'header',
-              text: {
-                type: 'plain_text',
-                text: "\"#{event.service_name}\" exited non-zero",
-              }
-            },
-            {
-              type: 'section',
-              fields: [
-                {
-                  type: 'mrkdwn',
-                  text: "*Swarm Node:*\n#{event.swarm_node_id}",
-                },
-                {
-                  type: 'mrkdwn',
-                  text: "*Service Name:*\n#{event.service_name}",
-                },
-                {
-                  type: 'mrkdwn',
-                  text: "*Container ID:*\n#{event.actor_id[..8]}",
-                },
-                {
-                  type: 'mrkdwn',
-                  text: "*Exit Code:*\n#{event.exit_code}",
-                },
-                {
-                  type: 'mrkdwn',
-                  text: "*Image:*\n#{event.simplified_image_name}",
-                },
-              ],
-            },
-            {
-              type: 'section',
-              text: {
+      @slack.post_webhook({
+        blocks: [
+          {
+            type: 'header',
+            text: {
+              type: 'plain_text',
+              text: "\"#{event.service_name}\" exited non-zero",
+            }
+          },
+          {
+            type: 'section',
+            fields: [
+              {
                 type: 'mrkdwn',
-                text: '*Logs:*',
+                text: "*Swarm Node:*\n#{event.swarm_node_id}",
               },
-            },
-            {
-              type: 'section',
-              text: {
-                type: 'plain_text',
-                text: logs || '<logs not available>',
+              {
+                type: 'mrkdwn',
+                text: "*Service Name:*\n#{event.service_name}",
               },
+              {
+                type: 'mrkdwn',
+                text: "*Container ID:*\n#{event.actor_id[..8]}",
+              },
+              {
+                type: 'mrkdwn',
+                text: "*Exit Code:*\n#{event.exit_code}",
+              },
+              {
+                type: 'mrkdwn',
+                text: "*Image:*\n#{event.simplified_image_name}",
+              },
+            ],
+          },
+          {
+            type: 'section',
+            text: {
+              type: 'mrkdwn',
+              text: '*Logs:*',
             },
-          ],
-        }),
-      )
+          },
+          {
+            type: 'section',
+            text: {
+              type: 'plain_text',
+              text: logs || '<logs not available>',
+            },
+          },
+        ],
+      })
     end
   end
 end

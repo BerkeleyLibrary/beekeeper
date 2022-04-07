@@ -1,11 +1,12 @@
 require 'time'
+require_relative 'logging.rb'
 
 module Beekeeper
-  class Event
+  class DockerEvent
     include Beekeeper::Logging
 
-    def initialize(event_data)
-      @data = event_data.kind_of?(String) ? JSON.parse(event_data) : event_data
+    def initialize(data)
+      @data = data.kind_of?(String) ? JSON.parse(data) : data
     end
 
     def actor_id

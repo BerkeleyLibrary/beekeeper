@@ -1,5 +1,5 @@
-describe Beekeeper::Event do
-  subject { Beekeeper::Event.new(fixture('service_failure_event.json').read) }
+describe Beekeeper::DockerEvent do
+  subject { Beekeeper::DockerEvent.new(fixture('service_failure_event.json').read) }
 
   describe '#simplified_image_name' do
     it 'strips the leading registry name' do

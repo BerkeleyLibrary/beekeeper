@@ -1,19 +1,16 @@
-require_relative './docker.rb'
-require_relative './slack_handler.rb'
+require_relative 'docker.rb'
+require_relative 'logging.rb'
+require_relative 'slack_handler.rb'
 
 module Beekeeper
   class Watcher
     include Beekeeper::Logging
 
     def initialize(docker: nil, handler: nil)
-      if docker.nil?
-        docker = Beekeeper::Docker.new
-      end
+      docker ||= Beekeeper::Docker.new
       @docker = docker
 
-      if handler.nil?
-        handler = Beekeeper::SlackHandler.new(docker: docker)
-      end
+      handler ||= Beekeeper::SlackHandler.new(docker: docker)
       @handler = handler
     end
 

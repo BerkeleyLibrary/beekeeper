@@ -1,5 +1,6 @@
 require 'excon'
-require_relative './event.rb'
+require_relative 'docker_event.rb'
+require_relative 'logging.rb'
 
 module Beekeeper
   class Docker

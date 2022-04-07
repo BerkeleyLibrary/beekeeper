@@ -2,6 +2,8 @@ require 'time'
 
 module Beekeeper
   class Event
+    include Beekeeper::Logging
+
     def initialize(event_data)
       @data = event_data.kind_of?(String) ? JSON.parse(event_data) : event_data
     end
@@ -20,6 +22,12 @@ module Beekeeper
 
     def from
       @data['from']
+    end
+
+    def simplified_image_name
+      from
+        .gsub('containers.lib.berkeley.edu', '...') \
+        .split('@')[0]
     end
 
     def service_name

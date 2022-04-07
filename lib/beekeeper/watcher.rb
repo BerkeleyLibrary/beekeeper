@@ -3,14 +3,32 @@ require_relative './slack_handler.rb'
 
 module Beekeeper
   class Watcher
-    def initialize
-      @docker = Beekeeper::Docker.new
-      @handler = Beekeeper::SlackHandler.new
+    include Beekeeper::Logging
+
+    def initialize(docker: nil, handler: nil)
+      if docker.nil?
+        docker = Beekeeper::Docker.new
+      end
+      @docker = docker
+
+      if handler.nil?
+        handler = Beekeeper::SlackHandler.new(docker: docker)
+      end
+      @handler = handler
     end
 
     def watch!
-      @docker.events do |event|
-        @handler.handle(event, @docker)
+      begin
+        @docker.events do |event|
+          begin
+            @handler.handle(event)
+          rescue => e
+            error "Error handling an event, continuing: #{e.inspect}"
+          end
+        end
+      rescue => e
+        fatal "Unrecoverable error occurred reading Docker events, terminating: #{e.inspect}"
+        raise
       end
     end
   end

@@ -17,7 +17,7 @@ docker service create \
     alpine /bin/sh -c 'echo "fake log data" && false'
 
 # Build and start the app
-docker-compose up --build -d
+docker compose up --build -d
 
 # Scale up/down your failure service to trigger relevant events
 docker service scale fail-test=0
@@ -25,3 +25,11 @@ docker service scale fail-test=1
 ```
 
 Check Slack to verify that the notifications were posted.
+
+## Tests
+
+There are a number of rspec tests, but keep in mind that all Docker and Slack interactions are mocked, so they might not be the _most_ useful tests in the world. Execute tests using the `spec` rake task:
+
+```ruby
+docker compose run --rm app spec
+```

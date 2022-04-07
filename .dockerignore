@@ -2,4 +2,5 @@
 docker-compose.yml
 Dockerfile
 Jenkinsfile
+artifacts/
 secrets/*

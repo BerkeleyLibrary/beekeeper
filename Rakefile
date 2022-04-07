@@ -7,7 +7,14 @@ task :watch do
   Beekeeper.watch!
 end
 
-desc 'Run the test suite'
-task :spec do
-  ruby 'rspec'
+begin
+  require 'rspec/core/rake_task'
+  RSpec::Core::RakeTask.new(:spec)
+rescue LoadError
 end
+
+desc 'Open a console'
+task :console do
+  exec 'pry -Ilib -r beekeeper'
+end
+task :c => :console

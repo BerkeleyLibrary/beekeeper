@@ -13,7 +13,7 @@ module Beekeeper
         },
         read_timeout: nil,
         connect_timeout: nil,
-        response_block: lambda { |data, _, _| yield Beekeeper::Event.new(data) },
+        response_block: lambda { |data, _, _| yield Beekeeper::DockerEvent.new(data) },
       )
     end
 

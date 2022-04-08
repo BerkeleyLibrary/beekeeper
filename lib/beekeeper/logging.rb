@@ -11,7 +11,10 @@ module Beekeeper
     def_delegators :logger, :info, :debug, :warn, :error, :fatal
 
     def self.logger
-      @logger ||= Logger.new(STDOUT)
+      @logger ||= begin
+        $stdout.sync = true
+        Logger.new(STDOUT)
+      end
     end
 
     def self.logger=(logger)

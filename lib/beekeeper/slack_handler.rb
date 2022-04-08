@@ -43,7 +43,7 @@ module Beekeeper
               },
               {
                 type: 'mrkdwn',
-                text: "*Container ID:*\n#{event.actor_id[..8]}",
+                text: "*Container ID:*\n#{event.actor_id[..7]}",
               },
               {
                 type: 'mrkdwn',

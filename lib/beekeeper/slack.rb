@@ -21,8 +21,6 @@ module Beekeeper
       @connection.post(body: JSON.dump(data), expects: [200, 201])
     end
 
-    private
-
     def webhook_url
       @webhook_url ||= begin
         if ENV.key? 'SLACK_WEBHOOK_URL'
@@ -32,9 +30,9 @@ module Beekeeper
           if File.exist? secret_file
             File.read secret_file
           else
-            raise "The Slack client requires a webhook URL. Either set ENV['SLACK_WEBHOOK_URL'] " +
-                  "to its value, or place it in a file specified by ENV['SLACK_WEBHOOK_URL_FILE'] " +
-                  "or at /run/secrets/SLACK_WEBHOOK_URL."
+            raise "A webhook URL is required. Either set ENV['SLACK_WEBHOOK_URL'] to its value, " +
+                  "place it in the file specified by ENV['SLACK_WEBHOOK_URL_FILE'], " +
+                  "or place it in a file at /run/secrets/SLACK_WEBHOOK_URL."
           end
         end
       end

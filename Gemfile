@@ -13,3 +13,5 @@ group :test do
   gem "rspec_junit_formatter", "~> 0.5.1"
   gem "rspec-mocks", "~> 3.11"
 end
+
+gem "simplecov", "~> 0.21.2"

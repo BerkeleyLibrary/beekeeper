@@ -69,7 +69,9 @@ module Beekeeper
           tail: 100,
           stdout: true,
           stderr: true
-        )
+        ).encode('UTF-8', invalid: :replace, undef: :replace, replace: '?')
+      rescue Encoding::UndefinedConversionError
+        '<encoding error: check CloudWatch for raw log data>'
       rescue
         '<no log data>'
       end

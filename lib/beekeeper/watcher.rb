@@ -39,6 +39,9 @@ module Beekeeper
     def watch!
       Docker::Event.stream({ read_timeout: nil }) do |event|
         handle event
+      rescue => e
+        error "Steaming error: #{e.inspect}"
+        error e.backtrace.join($/)
       end
     end
 
@@ -51,11 +54,10 @@ module Beekeeper
       debug "Notifying event: #{event.inspect}"
 
       get_event_watchers(event).each do |recipient|
-        begin
-          notify!(recipient, event)
-        rescue => e
-          error "Error: #{e.inspect}"
-        end
+        notify! recipient, event
+      rescue => e
+        error "Handling error: #{e.inspect}"
+        error e.backtrace.join($/)
       end
     end
 

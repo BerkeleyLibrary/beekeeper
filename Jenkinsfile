@@ -1,5 +1,5 @@
 dockerComposePipeline(
-    commands: ['spec'],
+    commands: ['rspec'],
     artifacts: [
         junit: 'artifacts/rspec/specs.xml',
         html: [

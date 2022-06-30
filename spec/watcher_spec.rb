@@ -1,20 +1,67 @@
+require 'beekeeper/watcher'
+require 'docker'
+require 'slack'
+
 describe Beekeeper::Watcher do
-  subject { Beekeeper::Watcher.new(docker: docker, handler: handler) }
-  let(:docker) { instance_double(Beekeeper::Docker) }
-  let(:handler) { instance_double(Beekeeper::SlackHandler) }
+  subject { Beekeeper::Watcher.new(slack) }
+
+  let(:slack) { instance_double(Slack::Web::Client) }
 
   describe '#watch!' do
-    it 'swallows handler errors' do
-      expect(docker).to receive(:events).and_yield('Event')
-      expect(handler).to receive(:handle) { raise 'An error occurred' }
+    context 'a container without labels' do
+      before { @old_watchers = ENV.delete('BEEKEEPER_WATCHERS') }
+      after { ENV['BEEKEEPER_WATCHERS'] = @old_watchers }
 
-      subject.watch!
+      it 'notifies default channels' do
+        expect_docker_event new_event
+        expect_slack_notifications %w(#devops-alerts)
+
+        subject.watch!
+      end
     end
 
-    it 'dies on docker events errors' do
-      expect(docker).to receive(:events) { raise 'An error occurred' }
+    context 'a container with labels' do
+      it 'notifies the correct channels' do
+        expect_docker_event new_event(watchers: '@some-user,#some-channel')
+        expect_slack_notifications %w(#some-channel @some-user)
 
-      expect { subject.watch! }.to raise_error
+        subject.watch!
+      end
     end
+  end
+
+  def expect_slack_notifications(channels)
+    channels.each do |channel|
+      expect(slack)
+        .to receive(:chat_postMessage)
+        .once
+        .ordered
+        .with(hash_including(channel: channel))
+    end
+  end
+
+  def expect_docker_event(event)
+    expect(Docker::Event)
+      .to receive(:stream)
+      .and_yield(event)
+  end
+
+  def new_event(exit_code: 1, watchers: nil, service_name: nil)
+    attrs = {
+      'exitCode' => exit_code.to_s,
+      'image' => 'containers.lib.berkeley.edu/lap/beekeeper:rspec-tests',
+    }
+    attrs['beekeeper.watchers'] = watchers if watchers
+    attrs['com.docker.swarm.service.name'] = service_name if service_name
+
+    Docker::Event.new(
+      {
+        Action: 'die',
+        Actor: {
+          ID: '12345',
+          Attributes: attrs,
+        },
+      }
+    )
   end
 end

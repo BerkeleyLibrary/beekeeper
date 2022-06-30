@@ -3,9 +3,35 @@ version: "3.5"
 services:
   app:
     build: .
-    command: watch
+    image: ucblib/beekeeper:development
     environment:
-      SLACK_WEBHOOK_URL: "${SLACK_WEBHOOK_URL}"
+      - BEEKEEPER_WATCHERS
+      - RSPEC_DOCKER
+      - SLACK_API_TOKEN
+    secrets:
+      - source: .env
+        target: /opt/app/.env
     volumes:
       - ./:/opt/app
       - /var/run/docker.sock:/var/run/docker.sock
+
+  fail_fixed_labels:
+    image: alpine:latest
+    command: sh -c 'echo "some logs..." && false'
+    deploy:
+      labels:
+        beekeeper.watchers: "#some-channel,@some-user"
+      restart_policy:
+        condition: on-failure
+        delay: 5m
+
+  fail_no_labels:
+    image: alpine:latest
+    command: sh -c 'echo "some logs..." && false'
+    deploy:
+      restart_policy:
+        condition: none
+
+secrets:
+  .env:
+    file: .env

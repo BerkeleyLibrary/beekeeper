@@ -12,8 +12,8 @@ FROM ruby:3.0-slim AS base
 # Install standard packages from the Debian repository
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
-        ca-certificates \
-        build-essential
+        build-essential \
+        ca-certificates
 
 # ------------------------------------------------------------
 # Run configuration
@@ -31,5 +31,4 @@ COPY . .
 # Add binstubs to the path.
 ENV PATH="/opt/app/bin:$PATH"
 
-ENTRYPOINT ["rake"]
-CMD ["-T"]
+CMD ["rake", "-T"]

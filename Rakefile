@@ -1,4 +1,16 @@
-require_relative 'lib/beekeeper.rb'
+$LOAD_PATH << 'lib'
+
+require 'dotenv/load'
+require 'beekeeper'
+require 'docker'
+
+Docker.setup_environment!
+
+begin
+  require 'rspec/core/rake_task'
+  RSpec::Core::RakeTask.new(:spec)
+rescue LoadError
+end
 
 task default: %w[watch]
 
@@ -7,14 +19,12 @@ task :watch do
   Beekeeper.watch!
 end
 
-begin
-  require 'rspec/core/rake_task'
-  RSpec::Core::RakeTask.new(:spec)
-rescue LoadError
-end
-
-desc 'Open a console'
-task :console do
+desc 'Open a pry Ruby console'
+task :pry do
   exec 'pry -Ilib -r beekeeper'
 end
-task :c => :console
+
+desc 'Open a shell'
+task :bash do
+  exec 'bash'
+end

@@ -1,5 +1,6 @@
 require 'beekeeper/logging'
 require 'beekeeper/monkeypatch/docker'
+require 'docker'
 require 'slack'
 
 module Beekeeper
@@ -32,16 +33,24 @@ module Beekeeper
     # SLACK_TOKEN_ENV and SLACK_TOKEN_FILE_ENV are not set.
     SLACK_TOKEN_DEFAULT_FILE = '/run/secrets/SLACK_API_TOKEN'.freeze
 
+    # Max amount of time to wait between successive events
+    READ_TIMEOUT = 3600
+    
+    # Max number of times to retry streaming events before giving up and raising
+    MAX_RETRIES = 10
+
     def initialize(slack = nil)
       @slack = slack || default_slack_client
     end
 
     def watch!
-      Docker::Event.stream({ nonblock: false, read_timeout: nil }) do |event|
-        handle event
-      rescue => e
-        error "Encountered error while streaming Docker events, dying: #{e.inspect}"
-        raise
+      tries = 0
+      begin
+        Docker::Event.stream({ nonblock: false, read_timeout: READ_TIMEOUT }) { |e| handle e }
+      rescue Docker::Error::TimeoutError => e
+        error "Encountered timeout error while streaming Docker events, retrying: #{e.inspect}"
+        tries += 1
+        tries <= MAX_RETRIES ? retry : raise
       end
     end
 

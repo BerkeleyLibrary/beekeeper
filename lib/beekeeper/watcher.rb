@@ -33,9 +33,6 @@ module Beekeeper
     # SLACK_TOKEN_ENV and SLACK_TOKEN_FILE_ENV are not set.
     SLACK_TOKEN_DEFAULT_FILE = '/run/secrets/SLACK_API_TOKEN'.freeze
 
-    # Max amount of time to wait between successive events
-    READ_TIMEOUT = 3600
-    
     # Max number of times to retry streaming events before giving up and raising
     MAX_RETRIES = 10
 
@@ -46,9 +43,9 @@ module Beekeeper
     def watch!
       tries = 0
       begin
-        Docker::Event.stream({ nonblock: false, read_timeout: READ_TIMEOUT }) { |e| handle e }
-      rescue Docker::Error::TimeoutError => e
-        error "Encountered timeout error while streaming Docker events, retrying: #{e.inspect}"
+        Docker::Event.stream({ nonblock: false, persistent: true, read_timeout: nil }) { |e| handle e }
+      rescue => e
+        error "Error while streaming Docker events, retrying: #{e.inspect}"
         tries += 1
         tries <= MAX_RETRIES ? retry : raise
       end

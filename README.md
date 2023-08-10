@@ -6,12 +6,10 @@ An embarassingly simple application which tails the Docker event logs, notifying
 
 ### .env
 
-Create a .env file with the following contents. This file is git-ignored and won't be committed.
+Scaffold a `.env` file from the included `.env.example`. See that file for details on the required environment variables.
 
-```ini
-BEEKEEPER_WATCHERS="@your-username,#devops-alerts-test"
-RSPEC_DOCKER=yes
-SLACK_API_TOKEN="Get this from a Slack administrator"
+```sh
+cp .env.example .env
 ```
 
 ### Build / Run / Test

@@ -37,17 +37,17 @@ module Beekeeper
     end
 
     def watch!
-      Docker::Event.stream({ read_timeout: nil }) do |event|
+      Docker::Event.stream({ nonblock: false, read_timeout: nil }) do |event|
         handle event
       rescue => e
-        error "Steaming error: #{e.inspect}"
-        error e.backtrace.join($/)
+        error "Encountered error while streaming Docker events, dying: #{e.inspect}"
+        raise
       end
     end
 
     def handle(event)
       unless event.failure?
-        debug "Ignoring non-failure event"
+        debug "Ignoring non-failure event: #{event.inspect}"
         return
       end
 

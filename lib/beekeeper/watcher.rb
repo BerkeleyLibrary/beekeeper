@@ -36,6 +36,9 @@ module Beekeeper
     # Max number of times to retry streaming events before giving up and raising
     MAX_RETRIES = 10
 
+    # Allow up to 1h between events by default.
+    MAX_TIME_BETWEEN_EVENTS = ENV.fetch('READ_TIMEOUT', 3600).to_i
+
     def initialize(slack = nil)
       @slack = slack || default_slack_client
     end
@@ -43,7 +46,11 @@ module Beekeeper
     def watch!
       tries = 0
       begin
-        Docker::Event.stream({ nonblock: false, persistent: true, read_timeout: nil }) { |e| handle e }
+        Docker::Event.stream({
+          nonblock: false,
+          persistent: true,
+          read_timeout: MAX_TIME_BETWEEN_EVENTS,
+        }, &method(:handle))
       rescue => e
         error "Error while streaming Docker events, retrying: #{e.inspect}"
         tries += 1

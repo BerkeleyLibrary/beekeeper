@@ -39,26 +39,37 @@ module Beekeeper
     # Allow up to 1h between events by default.
     MAX_TIME_BETWEEN_EVENTS = ENV.fetch('READ_TIMEOUT', 3600).to_i
 
+    # Exit gracefully (0) when receiving these signals
+    GRACEFUL_SIGNALS = %w(SIGHUP SIGINT SIGQUIT SIGTERM).freeze
+
     def initialize(slack = nil)
       @slack = slack || default_slack_client
+      @tries = 0
     end
 
     def watch!
-      tries = 0
       begin
         Docker::Event.stream({
           nonblock: false,
           persistent: true,
           read_timeout: MAX_TIME_BETWEEN_EVENTS,
         }, &method(:handle))
+      rescue SignalException => e
+        error "Received #{e.signm}"
+        raise unless GRACEFUL_SIGNALS.include? e.signm
+        error "Exiting gracefully"
+        exit 0
       rescue => e
         error "Error while streaming Docker events, retrying: #{e.inspect}"
-        tries += 1
-        tries <= MAX_RETRIES ? retry : raise
+        @tries += 1
+        @tries <= MAX_RETRIES ? retry : raise
       end
     end
 
     def handle(event)
+      # Reset the retry counter
+      @tries = 0
+
       unless event.failure?
         debug "Ignoring non-failure event: #{event.inspect}"
         return

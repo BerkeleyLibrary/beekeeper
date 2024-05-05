@@ -33,18 +33,16 @@ module Beekeeper
     # SLACK_TOKEN_ENV and SLACK_TOKEN_FILE_ENV are not set.
     SLACK_TOKEN_DEFAULT_FILE = '/run/secrets/SLACK_API_TOKEN'.freeze
 
-    # Max number of times to retry streaming events before giving up and raising
-    MAX_RETRIES = 10
-
-    # Allow up to 1h between events by default.
-    MAX_TIME_BETWEEN_EVENTS = ENV.fetch('READ_TIMEOUT', 3600).to_i
+    # Max time between events. Defaults to 0, meaning no timeout. If no events occur within
+    # the timeout a Docker::Error::TimeoutError is raised and BeeKeeper reconnects. This should
+    # still be avoided, as there is a race condition in which events could slip by unnoticed.
+    MAX_TIME_BETWEEN_EVENTS = ENV.fetch('READ_TIMEOUT', 0).to_i
 
     # Exit gracefully (0) when receiving these signals
     GRACEFUL_SIGNALS = %w(SIGHUP SIGINT SIGQUIT SIGTERM).freeze
 
     def initialize(slack = nil)
       @slack = slack || default_slack_client
-      @tries = 0
     end
 
     def watch!
@@ -59,17 +57,13 @@ module Beekeeper
         raise unless GRACEFUL_SIGNALS.include? e.signm
         error "Exiting gracefully"
         exit 0
-      rescue => e
-        error "Error while streaming Docker events, retrying: #{e.inspect}"
-        @tries += 1
-        @tries <= MAX_RETRIES ? retry : raise
+      rescue Docker::Error::TimeoutError => e
+        error "Read timeout, reconnecting to docker /events: #{e}"
+        retry
       end
     end
 
     def handle(event)
-      # Reset the retry counter
-      @tries = 0
-
       unless event.failure?
         debug "Ignoring non-failure event: #{event.inspect}"
         return

@@ -5,6 +5,7 @@ source "https://rubygems.org"
 git_source(:github) {|repo_name| "https://github.com/#{repo_name}" }
 
 gem "docker-api", "~> 2.2"
+gem "dotenv", "~> 2.7"
 gem "pry", "~> 0.14.1"
 gem "slack-ruby-client", "~> 1.1"
 
@@ -15,5 +16,3 @@ group :test do
   gem "rspec-mocks", "~> 3.11"
   gem "simplecov", "~> 0.21.2"
 end
-
-gem "dotenv", "~> 2.7"

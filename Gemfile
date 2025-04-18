@@ -16,3 +16,5 @@ group :test do
   gem "rspec-mocks", "~> 3.11"
   gem "simplecov", "~> 0.21.2"
 end
+
+gem "fugit", "~> 1.11"

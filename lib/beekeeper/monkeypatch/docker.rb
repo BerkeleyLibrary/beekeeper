@@ -1,6 +1,7 @@
 require 'docker'
 require 'beekeeper/monkeypatch/docker/event'
 require 'beekeeper/monkeypatch/docker/service'
+require 'beekeeper/monkeypatch/docker/task'
 
 module Docker
   class << self

@@ -1,6 +1,6 @@
 require 'docker'
 
-class Docker::Service
+class Docker::Task
   include Docker::Base
 
   class << self
@@ -10,16 +10,10 @@ class Docker::Service
       Docker::Util.parse_json(conn.get(path_for, opts)).map { |info| new(conn, info) }
     end
 
-    def get(id, opts = {}, conn = Docker.connection)
-      raw_resp = conn.get(path_for(id), opts)
-      info = Docker::Util.parse_json(raw_resp)
-      new(conn, info)
-    end
-
     private
 
     def base_path
-      'services'
+      'tasks'
     end
 
     def path_for(id = nil)
@@ -27,16 +21,16 @@ class Docker::Service
     end
   end
 
-  def label(label, default_value = nil)
-    labels.fetch(label, default_value)
+  def error
+    info['Status']['Err']
   end
 
-  def labels
-    info['Spec'].fetch('Labels', {})
+  def image
+    info['Spec']['ContainerSpec']['Image']
   end
 
-  def name
-    info['Spec']['Name']
+  def service_id
+    info['ServiceID']
   end
 
   def refresh!
@@ -45,14 +39,16 @@ class Docker::Service
     end
   end
 
-  def tasks(opts = {})
-    opts[:filters] ||= {}
-    opts[:filters][:service] = [id]
-    Docker::Task.all(opts)
+  def state
+    info['Status']['State']
+  end
+
+  %w(complete failed preparing rejected running).each do |status|
+    define_method("#{status}?".to_sym) { state == status }
   end
 
   def to_s
-    "Docker::Service { :id => #{self.id}, :connection => #{self.connection} }"
+    "Docker::Task { :id => #{self.id}, :connection => #{self.connection} }"
   end
 
   private

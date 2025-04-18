@@ -16,23 +16,6 @@ services:
       - ./:/opt/app
       - /var/run/docker.sock:/var/run/docker.sock
 
-  fail_fixed_labels:
-    image: alpine:latest
-    command: sh -c 'echo "some logs..." && false'
-    deploy:
-      labels:
-        beekeeper.watchers: "#some-channel,@some-user"
-      restart_policy:
-        condition: on-failure
-        delay: 5m
-
-  fail_no_labels:
-    image: alpine:latest
-    command: sh -c 'echo "some logs..." && false'
-    deploy:
-      restart_policy:
-        condition: none
-
 secrets:
   .env:
     file: .env

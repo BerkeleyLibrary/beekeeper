@@ -1,6 +1,6 @@
-# Beekeeper: A Slack Notifier for Docker Swarm
+# Beekeeper: A Monitoring System for Docker Swarm
 
-An embarassingly simple application which tails the Docker event logs, notifying a Slack webhook on non-zero container exits.
+Beekeeper integrates API-based Docker Swarm monitoring with Slack notifications.
 
 ## Development & Testing
 
@@ -14,17 +14,16 @@ cp .env.example .env
 
 ### Build / Run / Test
 
-This app depends on running in Swarm mode, so the build/test process is a little different than usual.
+Beekeeper operates in Docker Swarm mode, so contrary to our other apps you'll need to setup two stacks:
+1. The standard Compose-based stack with which you'll run tests.
+2. A Docker Swarm "stack" containing testing-related services that behave in particular, planned ways (e.g. exiting a certain way).
 
 ```sh
-# Build per usual
+# Build the image
 docker compose build
 
-# Deploy as a Swarm service (this is different)
-docker stack deploy -c docker-compose.yml beekeeper
-
-# Tail the logs
-docker service logs -f beekeeper_app
+# Deploy services used for testing
+docker stack deploy -c beekeeper.yml beekeeper
 
 # Run the tests or shell in
 docker compose run --rm app rspec

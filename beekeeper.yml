@@ -1,0 +1,68 @@
+---
+
+services:
+  cron:
+    image: crazymax/swarm-cronjob:1
+    environment:
+      - LOG_JSON=true
+      - LOG_LEVEL=debug
+      - TZ=America/Los_Angeles
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  cron_job_exits_nonzero:
+    image: alpine:latest
+    command: sh -c 'echo "Cronjob failed..." && false'
+    deploy:
+      labels:
+        - beekeeper.include_in_cronjob_report=true
+        - beekeeper.watchers=#some-channel,@some-user
+        - swarm.cronjob.enable=true
+        - swarm.cronjob.schedule=*/10 * * * * *
+      restart_policy:
+        condition: none
+
+  cron_job_exits_zero:
+    image: alpine:latest
+    command: /bin/true
+    deploy:
+      labels:
+        - beekeeper.include_in_cronjob_report=false
+        - beekeeper.watchers=#some-channel,@some-user
+        - swarm.cronjob.enable=true
+        - swarm.cronjob.schedule=*/10 * * * * *
+      restart_policy:
+        condition: none
+
+  cron_job_unscheduleable:
+    image: alpine:this-tag-does-not-exist
+    command: /bin/true
+    deploy:
+      labels:
+        - beekeeper.watchers=#some-channel,@some-user
+        - swarm.cronjob.enable=true
+        - swarm.cronjob.schedule=*/10 * * * * *
+      restart_policy:
+        condition: none
+
+  fail_fixed_labels:
+    image: alpine:latest
+    command: sh -c 'echo "some logs..." && false'
+    deploy:
+      labels:
+        beekeeper.watchers: "#some-channel,@some-user"
+      restart_policy:
+        condition: on-failure
+        delay: 5m
+
+  fail_no_labels:
+    image: alpine:latest
+    command: sh -c 'echo "some logs..." && false'
+    deploy:
+      restart_policy:
+        condition: none
+
+networks:
+  default:
+    external: true
+    name: host

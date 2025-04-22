@@ -64,23 +64,22 @@ module Beekeeper
     end
 
     def handle(event)
-      unless event.failure?
+      if event.failure?
+        debug "Notifying failure event: #{event.inspect}"
+
+        get_event_watchers(event).each do |recipient|
+          notify! recipient, event
+        rescue => e
+          error "Handling error: #{e.inspect}"
+          error e.backtrace.join($/)
+        end
+      else
         debug "Ignoring non-failure event: #{event.inspect}"
-        return
-      end
-
-      debug "Notifying event: #{event.inspect}"
-
-      get_event_watchers(event).each do |recipient|
-        notify! recipient, event
-      rescue => e
-        error "Handling error: #{e.inspect}"
-        error e.backtrace.join($/)
       end
     end
 
     def notify!(recipient, event)
-      slack.notify_event(event:, recipient:)
+      slack.notify_failure_event(event:, recipient:)
     end
 
     def stream_options

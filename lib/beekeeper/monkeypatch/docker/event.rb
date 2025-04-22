@@ -37,12 +37,25 @@ class Docker::Event
     end
   end
 
+  def paused?
+    # @note In this case, the actor seems to be the service. For more information,
+    #   you'll have to get the service (via actor.id), parse its UpdateStatus.Message
+    #   for the task ID (/task (\w+)$/), then get that task and inspect its Status.Err.
+    attributes['updatestate.new'] == 'paused' rescue false
+  end
+
   def service
     @service ||= Docker::Service.get(service_name)
   end
 
   def service_name
-    @service_name ||= actor.attributes['com.docker.swarm.service.name']
+    @service_name ||= begin
+      if type == 'service'
+        attributes['name']
+      else
+        actor.attributes['com.docker.swarm.service.name']
+      end
+    end
   end
 
   def service_related?

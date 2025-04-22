@@ -25,7 +25,7 @@ describe Beekeeper::SlackNotifier do
             }))
           })
 
-        notifier.notify_event event:, recipient:
+        notifier.notify_failure_event event:, recipient:
       end
     end
   end

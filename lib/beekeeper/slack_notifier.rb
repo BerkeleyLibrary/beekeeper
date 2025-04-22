@@ -21,7 +21,7 @@ module Beekeeper
       @client = client
     end
 
-    def notify_event(event:, recipient:)
+    def notify_failure_event(event:, recipient:)
       subject = event.service_name \
         ? "Service \"#{event.service_name}\" exited #{event.exit_code}"
         : "Container '#{event.actor.id[..7]}' exited #{event.exit_code}"

@@ -15,7 +15,7 @@ describe Beekeeper::Watcher do
         event = new_event
         recipients = %w(#devops-alerts)
         expect_docker_event event
-        expect_event_notification(event:, recipients:)
+        expect_failure_event_notification(event:, recipients:)
 
         watcher.watch!
       end
@@ -26,7 +26,7 @@ describe Beekeeper::Watcher do
         recipients = %w(#some-channel @some-user)
         event = new_event(watchers: recipients)
         expect_docker_event event
-        expect_event_notification(event:, recipients:)
+        expect_failure_event_notification(event:, recipients:)
 
         watcher.watch!
       end
@@ -41,10 +41,10 @@ describe Beekeeper::Watcher do
       .and_yield(event)
   end
 
-  def expect_event_notification(event:, recipients:)
+  def expect_failure_event_notification(event:, recipients:)
     recipients.each do |recipient|
       expect(notifier)
-        .to receive(:notify_event)
+        .to receive(:notify_failure_event)
         .with(event:, recipient:)
     end
   end

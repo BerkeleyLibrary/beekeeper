@@ -33,3 +33,7 @@ docker compose run --rm app bash
 ## Production Considerations
 
 The app requires access to `/var/run/docker.sock` in order to query the Docker API. The app could potentially use Docker's remote API but this is not currently implemented, and would be a bit painful to setup (requiring signed certificates). Also note that Docker events are node-specific, so use "global" mode to ensure an instance of the app is placed on each node.
+
+## TODO's
+
+- Event handling makes a lot of assumptions about what information is available, which differs wildly by event type and action. This needs to be cleaned up. See [Monitor Events](https://docs.docker.com/reference/api/engine/version/v1.49/#tag/System/operation/SystemEvents) in the Docker Engine documentation for details.

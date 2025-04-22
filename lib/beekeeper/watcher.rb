@@ -107,68 +107,24 @@ module Beekeeper
         ? "Service \"#{event.service_name}\" exited #{event.exit_code}"
         : "Container '#{event.actor.id[..7]}' exited #{event.exit_code}"
 
-      logs = begin
-        Docker::Container.get(event.actor.id).logs(
-          tail: 100,
-          stdout: true,
-          stderr: true
-        ).encode('UTF-8', invalid: :replace, undef: :replace, replace: '?')
-      rescue Encoding::UndefinedConversionError
-        '<encoding error: check CloudWatch for raw log data>'
-      rescue
-        '<no log data>'
-      end
-
       @slack.chat_postMessage(
         channel: recipient,
         as_user: true,
         blocks: [
-          {
-            type: 'header',
-            text: {
-              type: 'plain_text',
-              text: subject,
-            }
-          },
-          {
-            type: 'section',
-            fields: [
-              {
-                type: 'mrkdwn',
-                text: "*Swarm Node:*\n#{event.swarm_node_id || 'N/A'}",
-              },
-              {
-                type: 'mrkdwn',
-                text: "*Service Name:*\n#{event.service_name || 'N/A'}",
-              },
-              {
-                type: 'mrkdwn',
-                text: "*Container ID:*\n#{event.actor.id}",
-              },
-              {
-                type: 'mrkdwn',
-                text: "*Exit Code:*\n#{event.exit_code}",
-              },
-              {
-                type: 'mrkdwn',
-                text: "*Image:*\n#{event.image_shortname}",
-              },
-            ],
-          },
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: '*Logs:*',
-            },
-          },
-          {
-            type: 'section',
-            text: {
-              type: 'plain_text',
-              text: logs,
-            },
-          },
+          { type: 'header', text: { type: 'plain_text', text: subject } },
+          # Event Summary
+          { type: 'section', fields: [{
+              'Host Name'    => Docker.info['Name'],
+              'Swarm Node'   => event.swarm_node_id,
+              'Service Name' => event.service_name,
+              'Container ID' => event.actor_short_id,
+              'Exit Code'    => event.exit_code,
+              'Image'        => event.image_shortname,
+            }.map { |h, t| { type: 'mrkdwn', text: "*#{h}*: #{t}" } }
+          ]},
+          # Container Logs (if available)
+          { type: 'section', text: { type: 'mrkdwn', text: '*Logs:*' } },
+          { type: 'section', text: { type: 'plain_text', text: event.get_logs } },
         ],
       )
     end

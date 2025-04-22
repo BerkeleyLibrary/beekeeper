@@ -1,5 +1,6 @@
 require 'beekeeper/monkeypatch/docker'
 require 'beekeeper/logging'
+require 'beekeeper/slack_notifier'
 require 'beekeeper/watcher'
 
 module Beekeeper

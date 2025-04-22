@@ -1,7 +1,7 @@
 require 'beekeeper/logging'
 require 'beekeeper/monkeypatch/docker'
+require 'beekeeper/slack_notifier'
 require 'docker'
-require 'slack'
 
 module Beekeeper
   class Watcher
@@ -14,19 +14,6 @@ module Beekeeper
     # the timeout a Docker::Error::TimeoutError is raised and BeeKeeper reconnects. This should
     # still be avoided, as there is a race condition in which events could slip by unnoticed.
     MAX_TIME_BETWEEN_EVENTS = ENV.fetch('READ_TIMEOUT', 0).to_i
-
-    # Name of the environment variable containing the string value of
-    # the Slack API/OAuth token.
-    SLACK_TOKEN_ENV = 'SLACK_API_TOKEN'.freeze
-
-    # Name of the environment variable containing the path to file
-    # containing the value of the Slack token. This is used only if
-    # SLACK_TOKEN_ENV is empty.
-    SLACK_TOKEN_FILE_ENV = 'SLACK_API_TOKEN_FILE'.freeze
-
-    # Default path to the file that should contain the Slack token, if
-    # SLACK_TOKEN_ENV and SLACK_TOKEN_FILE_ENV are not set.
-    SLACK_TOKEN_DEFAULT_FILE = '/run/secrets/SLACK_API_TOKEN'.freeze
 
     # Comma-separated list of Slack channels/users. If a container or
     # service fails and does not have its own custom watchers, these
@@ -41,8 +28,10 @@ module Beekeeper
     # of watchers for the service.
     WATCHERS_LABEL = 'beekeeper.watchers'.freeze
 
-    def initialize(slack = nil)
-      @slack = slack || default_slack_client
+    attr_reader :slack
+
+    def initialize(slack = Beekeeper::SlackNotifier.new)
+      @slack = slack
     end
 
     def clean_watchlist(watchlist)
@@ -51,18 +40,6 @@ module Beekeeper
         .select(&method(:valid_channel?))
         .sort
         .uniq
-    end
-
-    def default_slack_client
-      Slack::Web::Client.new(token: default_slack_token).tap do |client|
-        client.auth_test
-      end
-    end
-
-    def default_slack_token
-      ENV.fetch(SLACK_TOKEN_ENV) do
-        File.read(ENV[SLACK_TOKEN_FILE_ENV] || SLACK_TOKEN_DEFAULT_FILE).chomp
-      end
     end
 
     def default_watchers
@@ -103,30 +80,7 @@ module Beekeeper
     end
 
     def notify!(recipient, event)
-      subject = event.service_name \
-        ? "Service \"#{event.service_name}\" exited #{event.exit_code}"
-        : "Container '#{event.actor.id[..7]}' exited #{event.exit_code}"
-
-      @slack.chat_postMessage(
-        channel: recipient,
-        as_user: true,
-        blocks: [
-          { type: 'header', text: { type: 'plain_text', text: subject } },
-          # Event Summary
-          { type: 'section', fields: [{
-              'Host Name'    => Docker.info['Name'],
-              'Swarm Node'   => event.swarm_node_id,
-              'Service Name' => event.service_name,
-              'Container ID' => event.actor_short_id,
-              'Exit Code'    => event.exit_code,
-              'Image'        => event.image_shortname,
-            }.map { |h, t| { type: 'mrkdwn', text: "*#{h}*: #{t}" } }
-          ]},
-          # Container Logs (if available)
-          { type: 'section', text: { type: 'mrkdwn', text: '*Logs:*' } },
-          { type: 'section', text: { type: 'plain_text', text: event.get_logs } },
-        ],
-      )
+      slack.notify_event(event:, recipient:)
     end
 
     def stream_options

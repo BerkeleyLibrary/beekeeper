@@ -1,5 +1,3 @@
----
-
 services:
   app:
     build: .
@@ -12,6 +10,7 @@ services:
     secrets:
       - source: .env
         target: /opt/app/.env
+    privileged: true
     volumes:
       - ./:/opt/app
       - /var/run/docker.sock:/var/run/docker.sock

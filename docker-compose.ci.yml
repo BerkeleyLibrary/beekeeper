@@ -1,0 +1,14 @@
+services:
+  app:
+    build: !reset
+    command: tail -f /dev/null
+    image: ${DOCKER_APP_IMAGE}
+    environment: !override
+      - RSPEC_DOCKER=true
+    secrets: !reset
+    volumes: !override
+      - artifacts:/opt/app/artifacts
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  artifacts:

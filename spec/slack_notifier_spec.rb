@@ -33,7 +33,7 @@ describe Beekeeper::SlackNotifier do
   def new_event(exit_code: 1, watchers: nil, service_name: nil)
     attrs = {
       'exitCode' => exit_code.to_s,
-      'image' => 'containers.lib.berkeley.edu/lap/beekeeper:rspec-tests',
+      'image' => 'ghcr.io/berkeleylibrary/beekeeper:rspec-tests',
     }
     attrs['beekeeper.watchers'] = watchers if watchers
     attrs['com.docker.swarm.service.name'] = service_name if service_name
